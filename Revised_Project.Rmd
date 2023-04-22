@@ -1,0 +1,80 @@
+---
+title: "Revised project"
+author: "betty"
+date: "4/21/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(car)
+```
+
+```{r}
+#Data cleaning
+wastedf<-read_excel("C:/Users/nebar/Desktop/ANOVA/project/Wastedata2.xlsx")
+wastedf$County<-as.factor(wastedf$County)
+wastedf
+
+#selecting the four counties
+wast<-wastedf%>%
+   select(County,Landfilled)%>%
+   arrange(County)%>%
+
+   filter(County %in% c("Anoka","Dakota","Hennepin","Ramsey"))
+  
+wast
+
+# find statistical summary
+summary(wast)
+
+#to find if there is missing value
+sapply(wast,function(x)sum(is.na(x)))
+```
+```{r}
+#Question 1: is there a significant mean Landfilled tons difference between the four counties(Anoka,Dakota,Hennepin and Ramsey)?
+modelwastelan<-aov(Landfilled~County,data=wast)
+summary(modelwastelan)
+
+#F-test = 49.05 & p-value =0
+#Reject HO: There is sufficient evidence to support the claim that there is significant difference between the mean recycling tons of the four counties
+
+#to see which counties have significant difference
+TukeyHSD(modelwastelan)
+#There is significant landfilled among all the four counties except between  Ramsey and Dakota
+
+
+#plotting the error_bar graph
+wast%>%
+  group_by(County)%>%
+  summarize(avL=mean(Landfilled),seL=sd(Landfilled)/sqrt(length(Landfilled)),tstar=qt(1-0.05/2,length(Landfilled)-1))%>%
+  ggplot(aes(x=County,y=avL))+geom_point()+geom_errorbar(aes(ymin=avL-tstar*seL,ymax=avL+tstar*seL))
+```
+```{r}
+#question 2: is there a significant mean recycling difference for the years 1991,2000, 2009 & 2017?
+library(nlme)
+
+#selecting the four years
+was<-Wastedata2%>%
+  filter(Year %in% c(1991,2000,2009,2017))
+was
+
+#changing year to factor
+was$Year<-as.factor(was$Year)
+
+#hypothesis testing
+model3<-lme(Recycling~Year,random=~1|County, data = was)
+anova(model3)
+
+#to see the difference among the years
+library(multcomp)
+posthoc<-glht(model3, linfct = mcp(Year = "Tukey"))
+summary(posthoc)
+```
+
