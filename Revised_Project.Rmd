@@ -1,6 +1,6 @@
 ---
 title: "Revised project"
-author: "betty"
+author: "Betty"
 date: "4/21/2023"
 output: html_document
 ---
